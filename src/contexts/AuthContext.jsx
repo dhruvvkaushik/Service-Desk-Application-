@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { onAuthStateChange, signInUser, createUser, signOutUser, getUserData } from '../services/authService';
+import { onAuthStateChange, signInUser, createUser, signOutUser, getUserData, signInWithGoogle, getGoogleRedirectResult } from '../services/authService';
 
 const AuthContext = createContext();
 
@@ -16,6 +16,34 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for Google redirect result
+    const checkRedirectResult = async () => {
+      const result = await getGoogleRedirectResult();
+      if (result.success) {
+        // User signed in via redirect
+        const userDataResult = await getUserData(result.user.uid);
+        if (userDataResult.success) {
+          setUser({
+            uid: result.user.uid,
+            email: result.user.email,
+            name: userDataResult.data.name,
+            role: userDataResult.data.role || 'user',
+            photoURL: result.user.photoURL
+          });
+        } else {
+          setUser({
+            uid: result.user.uid,
+            email: result.user.email,
+            name: result.user.displayName || 'User',
+            role: 'user',
+            photoURL: result.user.photoURL
+          });
+        }
+      }
+    };
+
+    checkRedirectResult();
+
     // Listen to Firebase auth state changes
     const unsubscribe = onAuthStateChange(async (firebaseUser) => {
       if (firebaseUser) {
@@ -26,7 +54,8 @@ export const AuthProvider = ({ children }) => {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             name: userDataResult.data.name,
-            role: userDataResult.data.role || 'user'
+            role: userDataResult.data.role || 'user',
+            photoURL: firebaseUser.photoURL
           });
         } else {
           // Fallback to basic user data
@@ -34,7 +63,8 @@ export const AuthProvider = ({ children }) => {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             name: firebaseUser.displayName || 'User',
-            role: 'user'
+            role: 'user',
+            photoURL: firebaseUser.photoURL
           });
         }
       } else {
@@ -74,12 +104,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const result = await signInWithGoogle();
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
   const value = {
     user,
     loading,
     login,
     register,
-    logout
+    logout,
+    loginWithGoogle
   };
 
   return (

@@ -6,6 +6,7 @@ A comprehensive service desk platform built with React that allows users to rais
 
 ### User Features
 - **User Registration & Login**: Secure authentication system with personalized access
+- **Google Authentication**: Sign in with Google account for quick access
 - **Ticket Creation**: Raise tickets with detailed descriptions, priority levels, and categories
 - **Ticket Tracking**: Monitor the status of submitted tickets in real-time
 - **Ticket Updates**: Receive notifications and updates on ticket progress

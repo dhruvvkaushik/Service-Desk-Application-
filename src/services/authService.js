@@ -4,7 +4,11 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
@@ -98,6 +102,90 @@ export const getUserData = async (uid) => {
     }
   } catch (error) {
     console.error('Error getting user data:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Sign in with Google
+export const signInWithGoogle = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Check if user exists in Firestore
+    const userDataResult = await getUserData(user.uid);
+    
+    if (!userDataResult.success) {
+      // Create new user document in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: user.email,
+        name: user.displayName || user.email.split('@')[0],
+        role: 'user',
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+        photoURL: user.photoURL
+      });
+    } else {
+      // Update last login time
+      await setDoc(doc(db, 'users', user.uid), {
+        lastLogin: new Date().toISOString()
+      }, { merge: true });
+    }
+
+    return { success: true, user };
+  } catch (error) {
+    console.error('Error signing in with Google:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Sign in with Google Redirect (for mobile)
+export const signInWithGoogleRedirect = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithRedirect(auth, provider);
+    return { success: true };
+  } catch (error) {
+    console.error('Error signing in with Google redirect:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get redirect result
+export const getGoogleRedirectResult = async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      const user = result.user;
+      
+      // Check if user exists in Firestore
+      const userDataResult = await getUserData(user.uid);
+      
+      if (!userDataResult.success) {
+        // Create new user document in Firestore
+        await setDoc(doc(db, 'users', user.uid), {
+          uid: user.uid,
+          email: user.email,
+          name: user.displayName || user.email.split('@')[0],
+          role: 'user',
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          photoURL: user.photoURL
+        });
+      } else {
+        // Update last login time
+        await setDoc(doc(db, 'users', user.uid), {
+          lastLogin: new Date().toISOString()
+        }, { merge: true });
+      }
+
+      return { success: true, user };
+    }
+    return { success: false };
+  } catch (error) {
+    console.error('Error getting redirect result:', error);
     return { success: false, error: error.message };
   }
 }; 

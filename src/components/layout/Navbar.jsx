@@ -88,9 +88,17 @@ const Navbar = () => {
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className="flex items-center space-x-2 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
               >
-                <div className="h-8 w-8 bg-indigo-600 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-white" />
-                </div>
+                {user?.photoURL ? (
+                  <img 
+                    src={user.photoURL} 
+                    alt={user.name}
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-8 w-8 bg-indigo-600 rounded-full flex items-center justify-center">
+                    <User className="h-4 w-4 text-white" />
+                  </div>
+                )}
                 <span className="hidden sm:block text-sm font-medium">
                   {user?.name}
                 </span>
